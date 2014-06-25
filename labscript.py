@@ -17,6 +17,8 @@ import sys
 import subprocess
 import keyword
 
+from labscript_utils.util import is_valid_name
+
 import labscript_utils.h5_lock, h5py
 from pylab import *
 
@@ -128,18 +130,10 @@ class Device(object):
             parent_device.add_device(self)
         
         # Check that the name doesn't already exist in the python namespace
-        if name in locals() or name in globals() or name in _builtins_dict:
-            raise LabscriptError('The device name %s already exists in the Python namespace. Please choose another.'%name)
-        if name in keyword.kwlist:
-            raise LabscriptError('%s is a reserved Python keyword.'%name +
-                                 ' Please choose a different device name.')
-                                     
         try:
-            # Test that name is a valid Python variable name:
-            exec '%s = None'%name
-            assert '.' not in name
-        except:
-            raise ValueError('%s is not a valid Python variable name.'%name)
+            is_valid_name(name, namespaces=(globals(), locals(), _builtins_dict))
+        except LabscriptError:
+            raise
         
         # Put self into the global namespace:
         _builtins_dict[name] = self
@@ -148,7 +142,7 @@ class Device(object):
         compiler.inventory.append(self)
         
     def add_device(self,device):
-        if any([isinstance(device,DeviceClass) for DeviceClass in self.allowed_children]):
+        if device.__class__ in self.allowed_children:
             self.child_devices.append(device)
         else:
             raise LabscriptError('Devices of type %s cannot be attached to devices of type %s.'%(device.description,self.description))
@@ -2321,23 +2315,11 @@ def load_globals(hdf5_filename):
     with h5py.File(hdf5_filename,'r') as hdf5_file:
         params = dict(hdf5_file['globals'].attrs)
         for name in params.keys():
-            if name in globals() or name in locals() or name in _builtins_dict:
-                raise LabscriptError('Error whilst parsing globals from %s. \'%s\''%(hdf5_filename,name) +
-                                     ' is already a name used by Python, labscript, or Pylab.'+
-                                     ' Please choose a different variable name to avoid a conflict.')
-            if name in keyword.kwlist:
-                raise LabscriptError('Error whilst parsing globals from %s. \'%s\''%(hdf5_filename,name) +
-                                     ' is a reserved Python keyword.' +
-                                     ' Please choose a different variable name.')
             try:
-                assert '.' not in name
-                exec(name + ' = 0')
-                exec('del ' + name )
-            except:
-                raise LabscriptError('ERROR whilst parsing globals from %s. \'%s\''%(hdf5_filename,name) +
-                                     'is not a valid Python variable name.' +
-                                     ' Please choose a different variable name.')
-                                     
+                is_valid_name(name)
+            except LabscriptError as e:
+                raise LabscriptError("Error whilst parsing globals from %s.'%s', %s" % (hdf5_filename, name, e.value))
+
             # Workaround for the fact that numpy.bool_ objects dont 
             # match python's builtin True and False when compared with 'is':
             if type(params[name]) == bool_: # bool_ is numpy.bool_, imported from pylab
