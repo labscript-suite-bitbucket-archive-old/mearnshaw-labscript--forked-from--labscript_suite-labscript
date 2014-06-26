@@ -17,12 +17,11 @@ import sys
 import subprocess
 import keyword
 
-import h5lock
-import functions
-
 import labscript_utils.h5_lock
 from labscript_utils.util import is_valid_name
+import functions
 
+import h5py
 from pylab import *
 
 try:
