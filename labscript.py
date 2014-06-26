@@ -142,7 +142,7 @@ class Device(object):
         compiler.inventory.append(self)
         
     def add_device(self,device):
-        if device.__class__ in self.allowed_children:
+        if any([isinstance(device, DeviceClass) for DeviceClass in self.allowed_children]):
             self.child_devices.append(device)
         else:
             raise LabscriptError('Devices of type %s cannot be attached to devices of type %s.'%(device.description,self.description))
