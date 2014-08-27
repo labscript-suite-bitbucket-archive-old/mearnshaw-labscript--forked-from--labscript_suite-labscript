@@ -103,6 +103,7 @@ def fastflatten(inarray, dtype):
     and/or single values, not a N-dimenional block of homogeneous data
     like a numpy array."""
     total_points = sum([len(element) if iterable(element) else 1 for element in inarray])
+
     flat = empty(total_points,dtype=dtype)
     i = 0
     for val in inarray:
@@ -595,7 +596,7 @@ class Pseudoclock(Device):
         # TODO: (if this needed or was it just for runviewer meta data that we don't need anymore?)
         self.times = {}
         for clock_line, time_array in all_times.items():
-            self.times[clock_line] = fastflatten(time_array,float)
+            self.times[clock_line] = fastflatten(time_array, float)
         
     def generate_code(self, hdf5_file):
         self.generate_clock()
