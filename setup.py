@@ -5,6 +5,6 @@ from setuptools import setup, find_packages
 setup(
         name = "labscript",
         packages = find_packages(),
-        install_requires = ['h5py', 'labscript_utils', 'matplotlib']
+        install_requires = ['h5py', 'labscript_utils']
 )
 
